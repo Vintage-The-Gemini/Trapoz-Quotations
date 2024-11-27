@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: trapoz-quotations-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: VITE_API_URL
+        value: https://trapoz-quotations.onrender.com/api
