@@ -9,6 +9,8 @@ import ItemManagement from './pages/admin/ItemManagement';
 import CreateQuotation from './pages/quotation/CreateQuotation';
 import QuotationList from './pages/quotation/QuotationList';
 import QuotationDetail from './pages/quotation/QuotationDetail';
+import EditQuotation from './pages/quotation/EditQuotation';
+
 
 function App() {
   return (
@@ -25,6 +27,9 @@ function App() {
               <Route path="/quotation/create" element={<CreateQuotation />} />
               <Route path="/quotations" element={<QuotationList />} />
               <Route path="/quotations/:id" element={<QuotationDetail />} />
+              <Route path="/quotations/:id/edit" element={<EditQuotation />} />
+
+              
             </Routes>
           </main>
         </div>

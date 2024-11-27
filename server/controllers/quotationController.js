@@ -88,21 +88,55 @@ export const createQuotation = async (req, res) => {
 // Update quotation
 export const updateQuotation = async (req, res) => {
     try {
+        console.log('Update Request Body:', req.body); // Debug log
+
+        const quotationData = {
+            clientName: req.body.clientName,
+            clientAddress: req.body.clientAddress,
+            site: req.body.site,
+            items: req.body.items.map(item => ({
+                item: item.item,
+                quantity: Number(item.quantity),
+                unitPrice: Number(item.unitPrice),
+                amount: Number(item.amount),
+                description: item.description,
+                units: item.units
+            })),
+            customItems: (req.body.customItems || []).map(item => ({
+                description: item.description,
+                units: item.units,
+                quantity: Number(item.quantity),
+                unitPrice: Number(item.unitPrice),
+                amount: Number(item.amount)
+            })),
+            subTotal: Number(req.body.subTotal),
+            vat: Number(req.body.vat),
+            totalAmount: Number(req.body.totalAmount),
+            termsAndConditions: req.body.termsAndConditions
+        };
+
+        console.log('Processed Quotation Data:', quotationData); // Debug log
+
         const quotation = await Quotation.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            quotationData,
             { new: true, runValidators: true }
         );
+
         if (!quotation) {
             return res.status(404).json({ message: 'Quotation not found' });
         }
+
         res.json(quotation);
     } catch (error) {
-        console.error('Error updating quotation:', error);
-        res.status(400).json({ message: error.message });
+        console.error('Update Error:', error); // Debug log
+        res.status(400).json({ 
+            message: 'Error updating quotation',
+            error: error.message,
+            details: error.errors
+        });
     }
 };
-
 // Delete quotation
 export const deleteQuotation = async (req, res) => {
     try {

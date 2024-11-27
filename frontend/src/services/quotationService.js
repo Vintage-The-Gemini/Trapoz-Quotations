@@ -5,6 +5,8 @@ export const getQuotations = () => api.get('/quotations');
 export const createQuotation = (quotation) => api.post('/quotations', quotation);
 export const getQuotationById = (id) => api.get(`/quotations/${id}`);
 export const deleteQuotation = (id) => api.delete(`/quotations/${id}`);  // Add delete method
+export const updateQuotation = (id, data) => api.put(`/quotations/${id}`, data);
+
 
 export const downloadPDF = async (id) => {
   try {
