@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
-  ArrowLeft, Download, Share, Truck, Trash2, CheckCircle, 
-  XCircle, Clock, AlertCircle, Check, Mail, Phone, MapPin 
+  ArrowLeft, Download, Share, Trash2, CheckCircle, 
+  XCircle, Clock, AlertCircle 
 } from 'lucide-react';
 import * as deliveryService from '../../services/deliveryService';
 import { Loading } from '../../components/shared/Loading';
@@ -19,18 +19,18 @@ const DeliveryNoteDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
-  const [receivedByData, setReceivedByData] = useState({
+  const [markAsDeliveredModal, setMarkAsDeliveredModal] = useState(false);
+  const [deliveryFormData, setDeliveryFormData] = useState({
     receivedBy: '',
     receiverPosition: '',
     notes: ''
   });
 
   useEffect(() => {
-    fetchDeliveryNoteDetails();
+    fetchDeliveryDetails();
   }, [id]);
 
-  const fetchDeliveryNoteDetails = async () => {
+  const fetchDeliveryDetails = async () => {
     try {
       setLoading(true);
       const response = await deliveryService.getDeliveryNoteById(id);
@@ -65,26 +65,20 @@ const DeliveryNoteDetail = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setReceivedByData(prev => ({ ...prev, [name]: value }));
-  };
-
   const handleMarkAsDelivered = async (e) => {
     e.preventDefault();
-    
-    if (!receivedByData.receivedBy) {
-      toast.error('Please enter who received the delivery');
-      return;
-    }
-    
     try {
-      await deliveryService.markDeliveryAsDelivered(id, receivedByData);
-      toast.success('Delivery marked as delivered successfully');
-      setConfirmationModalOpen(false);
-      fetchDeliveryNoteDetails();
+      if (!deliveryFormData.receivedBy) {
+        toast.error('Receiver name is required');
+        return;
+      }
+      
+      await deliveryService.markDeliveryAsDelivered(id, deliveryFormData);
+      toast.success('Delivery note marked as delivered');
+      setMarkAsDeliveredModal(false);
+      fetchDeliveryDetails();
     } catch (error) {
-      toast.error('Failed to mark delivery as delivered');
+      toast.error('Failed to update delivery status');
     }
   };
 
@@ -92,7 +86,7 @@ const DeliveryNoteDetail = () => {
   const getStatusBadge = (status) => {
     const statusMap = {
       pending: { bg: 'bg-yellow-700', text: 'text-yellow-200', label: 'Pending', icon: Clock },
-      in_transit: { bg: 'bg-blue-700', text: 'text-blue-200', label: 'In Transit', icon: Truck },
+      in_transit: { bg: 'bg-blue-700', text: 'text-blue-200', label: 'In Transit', icon: AlertCircle },
       delivered: { bg: 'bg-green-700', text: 'text-green-200', label: 'Delivered', icon: CheckCircle },
       cancelled: { bg: 'bg-red-700', text: 'text-red-200', label: 'Cancelled', icon: XCircle }
     };
@@ -133,18 +127,18 @@ const DeliveryNoteDetail = () => {
           documentId={id}
           documentNumber={deliveryNote.deliveryNumber}
           clientName={deliveryNote.clientName}
-          clientEmail={deliveryNote.clientEmail}
+          clientEmail={''}
           onClose={() => setIsShareModalOpen(false)}
         />
       )}
 
-      {/* Delivery Confirmation Modal */}
-      {confirmationModalOpen && (
+      {/* Mark as Delivered Modal */}
+      {markAsDeliveredModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-dark-light rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center p-4 border-b border-dark-lighter">
-              <h2 className="text-lg font-semibold text-white">Confirm Delivery</h2>
-              <button onClick={() => setConfirmationModalOpen(false)} className="p-1 rounded hover:bg-dark-lighter">
+              <h2 className="text-lg font-semibold text-white">Mark as Delivered</h2>
+              <button onClick={() => setMarkAsDeliveredModal(false)} className="p-1 rounded hover:bg-dark-lighter">
                 <XCircle size={20} className="text-gray-400" />
               </button>
             </div>
@@ -156,11 +150,10 @@ const DeliveryNoteDetail = () => {
                 </label>
                 <input
                   type="text"
-                  name="receivedBy"
                   className="input w-full"
-                  value={receivedByData.receivedBy}
-                  onChange={handleInputChange}
-                  placeholder="Name of person who received the delivery"
+                  value={deliveryFormData.receivedBy}
+                  onChange={(e) => setDeliveryFormData({...deliveryFormData, receivedBy: e.target.value})}
+                  placeholder="Name of person receiving the delivery"
                   required
                 />
               </div>
@@ -171,11 +164,10 @@ const DeliveryNoteDetail = () => {
                 </label>
                 <input
                   type="text"
-                  name="receiverPosition"
                   className="input w-full"
-                  value={receivedByData.receiverPosition}
-                  onChange={handleInputChange}
-                  placeholder="Position or title of the receiver"
+                  value={deliveryFormData.receiverPosition}
+                  onChange={(e) => setDeliveryFormData({...deliveryFormData, receiverPosition: e.target.value})}
+                  placeholder="Position or title of receiver"
                 />
               </div>
               
@@ -184,19 +176,17 @@ const DeliveryNoteDetail = () => {
                   Notes
                 </label>
                 <textarea
-                  name="notes"
-                  className="input w-full"
-                  value={receivedByData.notes}
-                  onChange={handleInputChange}
-                  placeholder="Any notes about the delivery"
-                  rows="3"
+                  className="input w-full h-24 resize-none"
+                  value={deliveryFormData.notes}
+                  onChange={(e) => setDeliveryFormData({...deliveryFormData, notes: e.target.value})}
+                  placeholder="Any additional notes about the delivery"
                 />
               </div>
               
               <div className="flex justify-end space-x-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setConfirmationModalOpen(false)}
+                  onClick={() => setMarkAsDeliveredModal(false)}
                   className="btn bg-dark-lighter hover:bg-dark text-gray-300"
                 >
                   Cancel
@@ -205,7 +195,7 @@ const DeliveryNoteDetail = () => {
                   type="submit"
                   className="btn bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
                 >
-                  <Check size={18} />
+                  <CheckCircle size={18} />
                   Confirm Delivery
                 </button>
               </div>
@@ -246,12 +236,12 @@ const DeliveryNoteDetail = () => {
             Download
           </button>
           
-          {deliveryNote.status !== 'delivered' && (
+          {(deliveryNote.status === 'pending' || deliveryNote.status === 'in_transit') && (
             <button
-              onClick={() => setConfirmationModalOpen(true)}
+              onClick={() => setMarkAsDeliveredModal(true)}
               className="btn bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
             >
-              <Check size={18} />
+              <CheckCircle size={18} />
               Mark as Delivered
             </button>
           )}
@@ -273,17 +263,14 @@ const DeliveryNoteDetail = () => {
           <div className="space-y-2">
             <p className="text-white font-medium">{deliveryNote.clientName}</p>
             {deliveryNote.clientAddress && (
-              <div className="flex items-start gap-3 mt-2">
-                <MapPin size={18} className="text-gray-400 mt-1" />
-                <p className="text-gray-300 whitespace-pre-line">{deliveryNote.clientAddress}</p>
-              </div>
+              <p className="text-gray-400 whitespace-pre-line">{deliveryNote.clientAddress}</p>
             )}
           </div>
         </div>
 
         <div className="bg-dark-light rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Delivery Information</h2>
-          <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-white mb-4">Delivery Details</h2>
+          <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-gray-400">Delivery Number:</span>
               <span className="text-white">{deliveryNote.deliveryNumber}</span>
@@ -294,68 +281,34 @@ const DeliveryNoteDetail = () => {
             </div>
             {deliveryNote.lpo && (
               <div className="flex justify-between">
-                <span className="text-gray-400">LPO Number:</span>
+                <span className="text-gray-400">Related LPO:</span>
                 <Link to={`/lpos/${deliveryNote.lpo._id}`} className="text-primary hover:text-primary-light">
                   {deliveryNote.lpo.lpoNumber}
                 </Link>
               </div>
             )}
-            <div className="pt-3 border-t border-dark-lighter">
-              <p className="text-gray-400">Delivery Address:</p>
-              <p className="text-white whitespace-pre-line mt-1">{deliveryNote.deliveryAddress}</p>
-            </div>
           </div>
         </div>
 
         <div className="bg-dark-light rounded-lg p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Transport Details</h2>
-          <div className="space-y-3">
-            {deliveryNote.vehicleDetails && (
-              <div>
-                <p className="text-gray-400">Vehicle Details:</p>
-                <p className="text-white">{deliveryNote.vehicleDetails}</p>
-              </div>
-            )}
-            {deliveryNote.driverName && (
-              <div className="flex items-start gap-3 mt-2">
-                <User size={18} className="text-gray-400 mt-1" />
-                <div>
-                  <p className="text-white">{deliveryNote.driverName}</p>
-                  {deliveryNote.driverContact && (
-                    <p className="text-gray-400 text-sm mt-1">
-                      <Phone size={14} className="inline mr-1" />
-                      {deliveryNote.driverContact}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {deliveryNote.status === 'delivered' && (
-              <div className="pt-3 mt-3 border-t border-dark-lighter">
-                <div className="flex items-center mb-2">
-                  <CheckCircle size={18} className="text-green-500 mr-2" />
-                  <p className="text-green-500 font-medium">Delivered</p>
-                </div>
-                
-                {deliveryNote.receivedBy && (
-                  <div>
-                    <p className="text-gray-400">Received By:</p>
-                    <p className="text-white">
-                      {deliveryNote.receivedBy}
-                      {deliveryNote.receiverPosition && ` (${deliveryNote.receiverPosition})`}
-                    </p>
-                  </div>
-                )}
-                
-                {deliveryNote.receivedDate && (
-                  <div className="mt-2">
-                    <p className="text-gray-400">Date Received:</p>
-                    <p className="text-white">{formatDate(deliveryNote.receivedDate)}</p>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Vehicle Details:</span>
+              <span className="text-white">{deliveryNote.vehicleDetails || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Driver Name:</span>
+              <span className="text-white">{deliveryNote.driverName || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Driver Contact:</span>
+              <span className="text-white">{deliveryNote.driverContact || 'N/A'}</span>
+            </div>
+            <div className="pt-2 border-t border-dark-lighter">
+              <p className="text-gray-400">Delivery Address:</p>
+              <p className="text-white whitespace-pre-line">{deliveryNote.deliveryAddress}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -370,4 +323,61 @@ const DeliveryNoteDetail = () => {
                 <th className="text-left py-3 px-4 text-gray-400">Description</th>
                 <th className="text-left py-3 px-4 text-gray-400">Units</th>
                 <th className="text-right py-3 px-4 text-gray-400">Quantity</th>
-                <th className="text-left py-3 px-4 text-gray-400">Remarks</th
+                <th className="text-left py-3 px-4 text-gray-400">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {deliveryNote.items.map((item, index) => (
+                <tr key={index} className="border-b border-dark-lighter">
+                  <td className="py-3 px-4">{item.description}</td>
+                  <td className="py-3 px-4">{item.units || 'N/A'}</td>
+                  <td className="py-3 px-4 text-right">{item.quantity}</td>
+                  <td className="py-3 px-4">{item.remarks || 'N/A'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Delivery Confirmation */}
+      {deliveryNote.status === 'delivered' && (
+        <div className="bg-dark-light rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Delivery Confirmation</h2>
+          <div className="p-4 bg-green-900/20 border border-green-800 rounded-lg">
+            <div className="flex items-center mb-3">
+              <CheckCircle className="text-green-500 mr-2" size={20} />
+              <span className="text-green-400 font-medium">Delivered</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-gray-400 text-sm">Received By</p>
+                <p className="text-white">{deliveryNote.receivedBy}</p>
+              </div>
+              {deliveryNote.receiverPosition && (
+                <div>
+                  <p className="text-gray-400 text-sm">Position</p>
+                  <p className="text-white">{deliveryNote.receiverPosition}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-gray-400 text-sm">Date Received</p>
+                <p className="text-white">{formatDate(deliveryNote.receivedDate)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notes */}
+      {deliveryNote.notes && (
+        <div className="bg-dark-light rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Notes</h2>
+          <p className="text-gray-300 whitespace-pre-line">{deliveryNote.notes}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DeliveryNoteDetail;
