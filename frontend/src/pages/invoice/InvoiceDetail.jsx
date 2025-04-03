@@ -1,7 +1,7 @@
 // frontend/src/pages/invoice/InvoiceDetail.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Download, CreditCard, Share, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, CreditCard, Share, Trash2, FileCheck, CheckCircle } from 'lucide-react';
 import * as invoiceService from '../../services/invoiceService';
 import * as paymentService from '../../services/paymentService';
 import { Loading } from '../../components/shared/Loading';
@@ -60,6 +60,18 @@ const InvoiceDetail = () => {
         navigate('/invoices');
       } catch (error) {
         toast.error('Failed to delete invoice');
+      }
+    }
+  };
+
+  const handleMarkAsPaid = async () => {
+    if (window.confirm('Are you sure you want to mark this invoice as fully paid?')) {
+      try {
+        await invoiceService.updateInvoice(id, { status: 'paid' });
+        toast.success('Invoice marked as paid');
+        fetchInvoiceDetails();
+      } catch (error) {
+        toast.error('Failed to update invoice status');
       }
     }
   };
@@ -143,13 +155,23 @@ const InvoiceDetail = () => {
             Download
           </button>
           {invoice.status !== 'paid' && (
-            <Link
-              to={`/payments/create?invoiceId=${id}`}
-              className="btn btn-primary flex items-center gap-2"
-            >
-              <CreditCard size={18} />
-              Record Payment
-            </Link>
+            <>
+              <Link
+                to={`/payments/create?invoiceId=${id}`}
+                className="btn btn-primary flex items-center gap-2"
+              >
+                <CreditCard size={18} />
+                Record Payment
+              </Link>
+              <button
+                onClick={handleMarkAsPaid}
+                className="btn bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                title="Mark as Paid Without Recording Payment"
+              >
+                <CheckCircle size={18} />
+                Mark as Paid
+              </button>
+            </>
           )}
           <button
             onClick={handleDelete}

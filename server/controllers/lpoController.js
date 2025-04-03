@@ -1,6 +1,7 @@
 // server/controllers/lpoController.js
 import LPO from '../models/LPO.js';
 import Quotation from '../models/Quotation.js';
+import Client from '../models/Client.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -13,6 +14,7 @@ export const getLPOs = async (req, res) => {
   try {
     const lpos = await LPO.find()
       .populate('quotation')
+      .populate('clientId')
       .sort('-receivedDate');
     res.json(lpos);
   } catch (error) {
@@ -25,7 +27,8 @@ export const getLPOs = async (req, res) => {
 export const getLPOById = async (req, res) => {
   try {
     const lpo = await LPO.findById(req.params.id)
-      .populate('quotation');
+      .populate('quotation')
+      .populate('clientId');
     
     if (!lpo) {
       return res.status(404).json({ message: 'LPO not found' });
@@ -56,6 +59,7 @@ export const recordLPO = async (req, res) => {
     const { 
       lpoNumber, 
       quotationId, 
+      clientId,
       issuedDate, 
       clientName, 
       clientAddress,
@@ -82,10 +86,17 @@ export const recordLPO = async (req, res) => {
       }
     }
     
+    // Find or create client if client ID is provided
+    let client = null;
+    if (clientId) {
+      client = await Client.findById(clientId);
+    }
+    
     // Create LPO data
     const newLpoData = {
       lpoNumber,
       quotation: quotationId,
+      clientId: client ? client._id : null,
       issuedDate: new Date(issuedDate),
       clientName,
       clientAddress,
@@ -101,8 +112,8 @@ export const recordLPO = async (req, res) => {
     const lpo = new LPO(newLpoData);
     const savedLPO = await lpo.save();
     
-    // If there's a quotation, update its status
-    if (quotation) {
+    // If there's a quotation, update its status to approved
+    if (quotation && quotation.status === 'pending') {
       quotation.status = 'approved';
       await quotation.save();
     }
@@ -206,5 +217,25 @@ export const updateLPOStatus = async (req, res) => {
   } catch (error) {
     console.error('Error updating LPO status:', error);
     res.status(400).json({ message: error.message });
+  }
+};
+
+// Download LPO PDF
+export const downloadLPOPDF = async (req, res) => {
+  try {
+    const lpo = await LPO.findById(req.params.id)
+      .populate('quotation');
+    
+    if (!lpo) {
+      return res.status(404).json({ message: 'LPO not found' });
+    }
+    
+    // Generate PDF (implementation would be in utils/pdfGenerator.js)
+    // ...
+    
+    res.status(200).json({ message: 'PDF download endpoint (to be implemented)' });
+  } catch (error) {
+    console.error('Error downloading LPO PDF:', error);
+    res.status(500).json({ message: error.message });
   }
 };

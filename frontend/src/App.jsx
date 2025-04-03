@@ -29,6 +29,17 @@ import CreateInvoice from './pages/invoice/CreateInvoice';
 // LPO pages
 import LPOList from './pages/lpo/LPOList';
 import LPODetail from './pages/lpo/LPODetail';
+import CreateLPO from './pages/lpo/CreateLPO';
+
+// Delivery pages
+import DeliveryNoteList from './pages/delivery/DeliveryNoteList';
+import DeliveryNoteDetail from './pages/delivery/DeliveryNoteDetail';
+import CreateDeliveryNote from './pages/delivery/CreateDeliveryNote';
+
+// Payment pages
+import PaymentList from './pages/payment/PaymentList';
+import PaymentDetail from './pages/payment/PaymentDetail';
+import RecordPayment from './pages/payment/RecordPayment';
 
 function App() {
   return (
@@ -59,7 +70,18 @@ function App() {
           
           {/* LPO routes */}
           <Route path="/lpos" element={<LPOList />} />
+          <Route path="/lpos/create" element={<CreateLPO />} />
           <Route path="/lpos/:id" element={<LPODetail />} />
+          
+          {/* Delivery routes */}
+          <Route path="/delivery-notes" element={<DeliveryNoteList />} />
+          <Route path="/delivery-notes/create" element={<CreateDeliveryNote />} />
+          <Route path="/delivery-notes/:id" element={<DeliveryNoteDetail />} />
+          
+          {/* Payment routes */}
+          <Route path="/payments" element={<PaymentList />} />
+          <Route path="/payments/create" element={<RecordPayment />} />
+          <Route path="/payments/:id" element={<PaymentDetail />} />
           
           {/* Admin routes */}
           <Route path="/items" element={<ItemManagement />} />

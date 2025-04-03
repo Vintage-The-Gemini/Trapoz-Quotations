@@ -108,58 +108,29 @@ QuotationSchema.pre('save', function(next) {
   next();
 });
 
-// Calculate totals before save
+// Calculate totals before save (handle both full updates and status-only updates)
 QuotationSchema.pre('save', function(next) {
   try {
-    // Calculate totals from regular items
-    const itemsTotal = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);
-    
-    // Calculate totals from custom items
-    const customItemsTotal = this.customItems ? 
-      this.customItems.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
+    // Only recalculate if items are present and this is not just a status update
+    if (this.items && this.items.length > 0 && this.isModified('items')) {
+      // Calculate totals from regular items
+      const itemsTotal = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);
+      
+      // Calculate totals from custom items
+      const customItemsTotal = this.customItems ? 
+        this.customItems.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
 
-    // Set total amounts
-    this.subTotal = itemsTotal + customItemsTotal;
-    this.vat = this.subTotal * 0.16; // 16% VAT
-    this.totalAmount = this.subTotal + this.vat;
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Add middleware for update operations
-QuotationSchema.pre('findOneAndUpdate', function(next) {
-  try {
-    const update = this.getUpdate();
-    if (update.items || update.customItems) {
-      const itemsTotal = (update.items || []).reduce((sum, item) => sum + (item.amount || 0), 0);
-      const customItemsTotal = (update.customItems || []).reduce((sum, item) => sum + (item.amount || 0), 0);
-
-      this.setUpdate({
-        ...update,
-        subTotal: itemsTotal + customItemsTotal,
-        vat: (itemsTotal + customItemsTotal) * 0.16,
-        totalAmount: (itemsTotal + customItemsTotal) * 1.16
-      });
+      // Set total amounts
+      this.subTotal = itemsTotal + customItemsTotal;
+      this.vat = this.subTotal * 0.16; // 16% VAT
+      this.totalAmount = this.subTotal + this.vat;
     }
+
     next();
   } catch (error) {
     next(error);
   }
 });
-
-// Add method to recalculate totals
-QuotationSchema.methods.recalculateTotals = function() {
-  const itemsTotal = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const customItemsTotal = this.customItems ? 
-    this.customItems.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
-
-  this.subTotal = itemsTotal + customItemsTotal;
-  this.vat = this.subTotal * 0.16;
-  this.totalAmount = this.subTotal + this.vat;
-};
 
 // Check if quotation is expired
 QuotationSchema.methods.isExpired = function() {

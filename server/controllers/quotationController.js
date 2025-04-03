@@ -1,10 +1,7 @@
-// backend/controllers/quotationController.js
+// server/controllers/quotationController.js
 import Quotation from '../models/Quotation.js';
 import { generateQuotationPDF } from '../utils/pdfGenerator.js';
-import fs from 'fs'
-
-// Define your routes here...
-
+import fs from 'fs';
 
 // Get all quotations
 export const getQuotations = async (req, res) => {
@@ -90,6 +87,31 @@ export const updateQuotation = async (req, res) => {
     try {
         console.log('Update Request Body:', req.body); // Debug log
 
+        // If it's a simple status update, handle it separately
+        if (req.body.status && Object.keys(req.body).length <= 2) { // status and possibly notes
+            const update = {
+                status: req.body.status
+            };
+            
+            // Add notes if provided
+            if (req.body.notes) {
+                update.notes = req.body.notes;
+            }
+            
+            const updatedQuotation = await Quotation.findByIdAndUpdate(
+                req.params.id,
+                update,
+                { new: true, runValidators: true }
+            );
+            
+            if (!updatedQuotation) {
+                return res.status(404).json({ message: 'Quotation not found' });
+            }
+            
+            return res.json(updatedQuotation);
+        }
+        
+        // For full updates, continue with the existing logic
         const quotationData = {
             clientName: req.body.clientName,
             clientAddress: req.body.clientAddress,
@@ -137,6 +159,7 @@ export const updateQuotation = async (req, res) => {
         });
     }
 };
+
 // Delete quotation
 export const deleteQuotation = async (req, res) => {
     try {

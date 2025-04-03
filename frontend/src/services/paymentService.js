@@ -41,3 +41,6 @@ export const downloadReceiptPDF = async (id) => {
     throw error;
   }
 };
+
+// Get payment statistics
+export const getPaymentStats = () => api.get('/payments/stats');

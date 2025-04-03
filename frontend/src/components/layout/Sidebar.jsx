@@ -90,7 +90,7 @@ const Sidebar = ({
       <div className={sidebarClass}>
         <div className="flex items-center justify-between p-4 border-b border-dark-lighter">
           {!isSidebarCollapsed && (
-            <h1 className="text-xl font-bold text-primary">Trapoz System</h1>
+            <h1 className="text-xl font-bold text-primary">Trapoz Asphalt</h1>
           )}
           <button
             onClick={toggleSidebar}
@@ -152,7 +152,7 @@ const Sidebar = ({
 
         <div className="fixed inset-y-0 left-0 flex flex-col w-64 max-w-sm bg-dark-light z-50">
           <div className="flex items-center justify-between p-4 border-b border-dark-lighter">
-            <h1 className="text-xl font-bold text-primary">Trapoz System</h1>
+            <h1 className="text-xl font-bold text-primary">Trapoz Asphalt</h1>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-1 rounded hover:bg-dark"

@@ -17,6 +17,7 @@ const ProformaInvoice = ({ quotation }) => {
   const [loading, setLoading] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
+  // Only show for approved quotations
   if (quotation.status !== "approved") {
     return null;
   }

@@ -17,11 +17,14 @@ const QuotationApproval = ({ quotation, onStatusChange }) => {
   const handleApprove = async () => {
     try {
       setLoading(true);
-      const updatedQuotation = await quotationService.updateQuotation(quotation._id, {
-        status: 'approved'
-      });
+      // We're only sending the status update, not the entire quotation
+      const response = await quotationService.updateQuotationStatus(quotation._id, 'approved');
       toast.success('Quotation approved successfully');
-      onStatusChange(updatedQuotation.data);
+      
+      // Pass the updated quotation to the parent component
+      if (onStatusChange && response.data) {
+        onStatusChange(response.data);
+      }
     } catch (error) {
       toast.error('Failed to approve quotation');
       console.error('Error approving quotation:', error);
@@ -38,13 +41,19 @@ const QuotationApproval = ({ quotation, onStatusChange }) => {
 
     try {
       setLoading(true);
-      const updatedQuotation = await quotationService.updateQuotation(quotation._id, {
-        status: 'rejected',
-        notes: rejectionReason
-      });
+      const response = await quotationService.updateQuotationStatus(
+        quotation._id, 
+        'rejected',
+        rejectionReason
+      );
+      
       toast.success('Quotation rejected');
       setShowRejectForm(false);
-      onStatusChange(updatedQuotation.data);
+      
+      // Pass the updated quotation to the parent component
+      if (onStatusChange && response.data) {
+        onStatusChange(response.data);
+      }
     } catch (error) {
       toast.error('Failed to reject quotation');
       console.error('Error rejecting quotation:', error);

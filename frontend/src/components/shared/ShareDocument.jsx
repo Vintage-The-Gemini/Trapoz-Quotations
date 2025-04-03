@@ -1,6 +1,6 @@
 // frontend/src/components/shared/ShareDocument.jsx
 import { useState } from 'react';
-import { X, Send, Mail } from 'lucide-react';
+import { X, Send, Mail, Copy, Check } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 
@@ -16,9 +16,11 @@ const ShareDocument = ({
   const [recipientName, setRecipientName] = useState(clientName || '');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const documentTypeLabels = {
     'quotation': 'Quotation',
+    'proforma': 'Proforma Invoice',
     'lpo': 'Local Purchase Order',
     'invoice': 'Invoice',
     'receipt': 'Receipt',
@@ -54,6 +56,22 @@ const ShareDocument = ({
     }
   };
 
+  // Create a shareable link (in a real app, this would hit an API)
+  const generateShareableLink = () => {
+    return `${window.location.origin}/${documentType}s/view/${documentId}?token=share_xyz123`;
+  };
+
+  const handleCopyLink = () => {
+    const shareableLink = generateShareableLink();
+    navigator.clipboard.writeText(shareableLink);
+    setCopied(true);
+    toast.success('Link copied to clipboard');
+    
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
       <div className="bg-dark-light rounded-lg w-full max-w-md">
@@ -74,6 +92,32 @@ const ShareDocument = ({
           
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">
+              Shareable Link
+            </label>
+            <div className="flex items-center">
+              <input
+                type="text"
+                className="input w-full"
+                value={generateShareableLink()}
+                readOnly
+              />
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="ml-2 p-2 bg-dark-lighter rounded hover:bg-dark text-gray-400 hover:text-white"
+                title="Copy link"
+              >
+                {copied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
+              </button>
+            </div>
+          </div>
+          
+          <div className="pt-2 border-t border-dark-lighter">
+            <h3 className="text-sm font-medium text-white mb-3">Send via email</h3>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
               Recipient Email
             </label>
             <div className="relative">
@@ -86,7 +130,6 @@ const ShareDocument = ({
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
                 placeholder="email@example.com"
-                required
               />
             </div>
           </div>
@@ -128,7 +171,7 @@ const ShareDocument = ({
             <button
               type="submit"
               className="btn btn-primary flex items-center gap-2"
-              disabled={sending}
+              disabled={sending || !recipientEmail}
             >
               <Send size={16} />
               {sending ? 'Sending...' : 'Send'}
