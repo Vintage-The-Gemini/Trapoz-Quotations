@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Import routes
 import quotationRoutes from './routes/quotationRoutes.js';
@@ -19,18 +20,32 @@ import clientRoutes from './routes/clientRoutes.js';
 import sharingRoutes from './routes/sharingRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 
+// Configure environment variables
 dotenv.config();
 
+// Initialize express app
 const app = express();
+
+// Get current directory
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Security and utility middleware
 app.use(helmet());
 app.use(morgan('combined'));
+
+// Configure CORS - ensure frontend origins are included
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: [
+    'http://localhost:5173',  // Vite dev server
+    'http://localhost:3000',  // Alternative local dev
+    process.env.FRONTEND_URL || '*'  // Production frontend URL
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
+
+// Body parser middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -48,11 +63,12 @@ uploadDirs.forEach(dir => {
   const dirPath = path.join(process.cwd(), dir);
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
+    console.log(`Created directory: ${dir}`);
   }
 });
 
 // Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Database connection with retry logic
 const connectDB = async () => {
@@ -62,9 +78,16 @@ const connectDB = async () => {
       socketTimeoutMS: 45000,
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    return conn;
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    process.exit(1);
+    // Retry logic
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Retrying connection in 5 seconds...');
+      setTimeout(() => connectDB(), 5000);
+    } else {
+      process.exit(1);
+    }
   }
 };
 
@@ -87,8 +110,6 @@ app.use('/api/delivery-notes', deliveryNoteRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/share', sharingRoutes);
 app.use('/api/settings', settingsRoutes);
-
-
 
 // 404 handler
 app.use((req, res) => {
@@ -127,20 +148,38 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server with dynamic port selection
 const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     // Connect to database
     await connectDB();
     
-    // Initialize email service
-    await initializeTransporter();
+    // Email service is temporarily disabled
+    console.log('Email service is disabled');
     
-    // Start server
-    app.listen(PORT, () => {
-      console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-    });
+    // Function to try different ports if the default one is in use
+    const tryPort = (port) => {
+      return new Promise((resolve, reject) => {
+        const server = app.listen(port)
+          .on('listening', () => {
+            console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${port}`);
+            resolve(server);
+          })
+          .on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+              console.log(`Port ${port} is busy, trying port ${port + 1}...`);
+              server.close();
+              resolve(tryPort(port + 1));
+            } else {
+              reject(err);
+            }
+          });
+      });
+    };
+    
+    // Start server with automatic port retry
+    await tryPort(PORT);
   } catch (error) {
     console.error('Server startup error:', error);
     process.exit(1);
@@ -150,8 +189,20 @@ const startServer = async () => {
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);
-  // Close server & exit process
-  process.exit(1);
+  // Log the error but don't exit in development
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
 });
 
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // Log the error but don't exit in development
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
+
+// Start the server
 startServer();
