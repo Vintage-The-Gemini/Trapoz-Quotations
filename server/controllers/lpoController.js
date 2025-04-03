@@ -3,6 +3,10 @@ import LPO from '../models/LPO.js';
 import Quotation from '../models/Quotation.js';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get current directory
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Get all LPOs
 export const getLPOs = async (req, res) => {
@@ -37,6 +41,18 @@ export const getLPOById = async (req, res) => {
 // Record a new LPO received from client
 export const recordLPO = async (req, res) => {
   try {
+    let lpoData;
+    
+    // Handle multipart form data (with file upload)
+    if (req.file) {
+      // Parse JSON data from FormData
+      lpoData = req.body.lpoData ? JSON.parse(req.body.lpoData) : req.body;
+      lpoData.attachmentUrl = `/uploads/lpo/${req.file.filename}`;
+    } else {
+      // Regular JSON request
+      lpoData = req.body;
+    }
+    
     const { 
       lpoNumber, 
       quotationId, 
@@ -49,7 +65,7 @@ export const recordLPO = async (req, res) => {
       items,
       deliveryAddress,
       additionalNotes
-    } = req.body;
+    } = lpoData;
     
     // Check if the LPO number already exists
     const existingLPO = await LPO.findOne({ lpoNumber });
@@ -67,7 +83,7 @@ export const recordLPO = async (req, res) => {
     }
     
     // Create LPO data
-    const lpoData = {
+    const newLpoData = {
       lpoNumber,
       quotation: quotationId,
       issuedDate: new Date(issuedDate),
@@ -79,15 +95,10 @@ export const recordLPO = async (req, res) => {
       items,
       deliveryAddress,
       additionalNotes,
-      // Calculate totals in the model's pre-save hook
+      // If file was uploaded, attachmentUrl will be set above
     };
     
-    // Handle file upload if there's an attachment
-    if (req.file) {
-      lpoData.attachmentUrl = `/uploads/lpo/${req.file.filename}`;
-    }
-    
-    const lpo = new LPO(lpoData);
+    const lpo = new LPO(newLpoData);
     const savedLPO = await lpo.save();
     
     // If there's a quotation, update its status
@@ -106,10 +117,12 @@ export const recordLPO = async (req, res) => {
 // Update LPO
 export const updateLPO = async (req, res) => {
   try {
-    const updates = req.body;
+    let updates;
     
-    // Handle file upload if there's a new attachment
+    // Handle multipart form data (with file upload)
     if (req.file) {
+      // Parse JSON data from FormData
+      updates = req.body.lpoData ? JSON.parse(req.body.lpoData) : req.body;
       updates.attachmentUrl = `/uploads/lpo/${req.file.filename}`;
       
       // Delete old file if it exists
@@ -120,6 +133,9 @@ export const updateLPO = async (req, res) => {
           fs.unlinkSync(oldFilePath);
         }
       }
+    } else {
+      // Regular JSON request
+      updates = req.body;
     }
     
     const lpo = await LPO.findByIdAndUpdate(

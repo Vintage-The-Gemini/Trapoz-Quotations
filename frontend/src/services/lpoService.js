@@ -8,28 +8,38 @@ export const getLPOs = () => api.get('/lpos');
 export const getLPOById = (id) => api.get(`/lpos/${id}`);
 
 // Create a new LPO
-export const createLPO = (lpoData) => api.post('/lpos', lpoData);
+export const createLPO = (lpoData) => {
+  // Check if lpoData is FormData (for file uploads) or regular object
+  if (lpoData instanceof FormData) {
+    return api.post('/lpos', lpoData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  } else {
+    return api.post('/lpos', lpoData);
+  }
+};
 
 // Update LPO
-export const updateLPO = (id, lpoData) => api.put(`/lpos/${id}`, lpoData);
+export const updateLPO = (id, lpoData) => {
+  // Check if lpoData is FormData (for file uploads) or regular object
+  if (lpoData instanceof FormData) {
+    return api.put(`/lpos/${id}`, lpoData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  } else {
+    return api.put(`/lpos/${id}`, lpoData);
+  }
+};
 
 // Delete LPO
 export const deleteLPO = (id) => api.delete(`/lpos/${id}`);
 
 // Update LPO status
 export const updateLPOStatus = (id, status) => api.patch(`/lpos/${id}/status`, { status });
-
-// Upload LPO attachment
-export const uploadLPOAttachment = (id, file) => {
-  const formData = new FormData();
-  formData.append('attachment', file);
-  
-  return api.post(`/lpos/${id}/attachment`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  });
-};
 
 // Download LPO as PDF
 export const downloadLPOPDF = async (id) => {
