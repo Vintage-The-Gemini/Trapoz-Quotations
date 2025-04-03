@@ -1,12 +1,23 @@
-// backend/server.js
+// server/server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import fs from 'fs';
+import path from 'path';
+
+// Import routes
 import quotationRoutes from './routes/quotationRoutes.js';
 import itemRoutes from './routes/itemRoutes.js';
+import lpoRoutes from './routes/lpoRoutes.js';
+import invoiceRoutes from './routes/invoiceRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import deliveryNoteRoutes from './routes/deliveryNoteRoutes.js';
+import clientRoutes from './routes/clientRoutes.js';
+import sharingRoutes from './routes/sharingRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 dotenv.config();
 
@@ -17,11 +28,31 @@ app.use(helmet());
 app.use(morgan('combined'));
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Ensure upload directories exist
+const uploadDirs = [
+  'uploads',
+  'uploads/lpo',
+  'uploads/quotations',
+  'uploads/invoices',
+  'uploads/payments',
+  'uploads/delivery-notes'
+];
+
+uploadDirs.forEach(dir => {
+  const dirPath = path.join(process.cwd(), dir);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+});
+
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
 
 // Database connection with retry logic
 const connectDB = async () => {
@@ -49,6 +80,15 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/quotations', quotationRoutes);
 app.use('/api/items', itemRoutes);
+app.use('/api/lpos', lpoRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/delivery-notes', deliveryNoteRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/share', sharingRoutes);
+app.use('/api/settings', settingsRoutes);
+
+
 
 // 404 handler
 app.use((req, res) => {
@@ -91,7 +131,13 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
+    // Connect to database
     await connectDB();
+    
+    // Initialize email service
+    await initializeTransporter();
+    
+    // Start server
     app.listen(PORT, () => {
       console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });

@@ -1,4 +1,4 @@
-// backend/models/Quotation.js
+// server/models/Quotation.js
 import mongoose from 'mongoose';
 
 const QuotationItemSchema = new mongoose.Schema({
@@ -42,11 +42,18 @@ const QuotationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  clientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Client'
+  },
   clientName: {
     type: String,
     required: true
   },
   clientAddress: String,
+  clientEmail: String,
+  clientPhone: String,
+  contactPerson: String,
   site: String,
   items: [QuotationItemSchema],
   customItems: [QuotationItemSchema], // Added separate array for custom items
@@ -67,7 +74,17 @@ const QuotationSchema = new mongoose.Schema({
   termsAndConditions: {
     type: String,
     default: "1. Payment terms: 30 days\n2. Validity: 30 days\n3. VAT Exclusive"
-  }
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'expired', 'converted'],
+    default: 'pending'
+  },
+  validUntil: {
+    type: Date
+  },
+  notes: String,
+  attachmentUrl: String
 }, {
   timestamps: true
 });
@@ -80,6 +97,14 @@ QuotationSchema.pre('save', function(next) {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     this.quoteNumber = `Q${year}${month}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
   }
+  
+  // Set validity date if not set (default 30 days)
+  if (!this.validUntil) {
+    const validityDate = new Date(this.date);
+    validityDate.setDate(validityDate.getDate() + 30);
+    this.validUntil = validityDate;
+  }
+  
   next();
 });
 
@@ -134,6 +159,30 @@ QuotationSchema.methods.recalculateTotals = function() {
   this.subTotal = itemsTotal + customItemsTotal;
   this.vat = this.subTotal * 0.16;
   this.totalAmount = this.subTotal + this.vat;
+};
+
+// Check if quotation is expired
+QuotationSchema.methods.isExpired = function() {
+  return this.validUntil < new Date();
+};
+
+// Method to approve quotation
+QuotationSchema.methods.approve = function() {
+  if (this.status === 'pending' && !this.isExpired()) {
+    this.status = 'approved';
+    return true;
+  }
+  return false;
+};
+
+// Method to reject quotation
+QuotationSchema.methods.reject = function(reason) {
+  if (this.status === 'pending') {
+    this.status = 'rejected';
+    this.notes = reason || this.notes;
+    return true;
+  }
+  return false;
 };
 
 export default mongoose.model('Quotation', QuotationSchema);
