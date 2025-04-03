@@ -9,18 +9,26 @@ import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/admin/Dashboard';
 import ItemManagement from './pages/admin/ItemManagement';
 
+// Client pages
+import ClientList from './pages/client/ClientList';
+import ClientDetail from './pages/client/ClientDetail';
+import CreateClient from './pages/client/CreateClient';
+import EditClient from './pages/client/EditClient';
+
 // Quotation pages
 import QuotationList from './pages/quotation/QuotationList';
 import CreateQuotation from './pages/quotation/CreateQuotation';
 import QuotationDetail from './pages/quotation/QuotationDetail';
 import EditQuotation from './pages/quotation/EditQuotation';
 
-// Other pages would be imported here as they're developed
-// import ClientList from './pages/client/ClientList';
-// import InvoiceList from './pages/invoice/InvoiceList';
-// import LPOList from './pages/lpo/LPOList';
-// import PaymentList from './pages/payment/PaymentList';
-// import DeliveryList from './pages/delivery/DeliveryList';
+// Invoice pages
+import InvoiceList from './pages/invoice/InvoiceList';
+import InvoiceDetail from './pages/invoice/InvoiceDetail';
+import CreateInvoice from './pages/invoice/CreateInvoice';
+
+// LPO pages
+import LPOList from './pages/lpo/LPOList';
+import LPODetail from './pages/lpo/LPODetail';
 
 function App() {
   return (
@@ -32,21 +40,29 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           
+          {/* Client routes */}
+          <Route path="/clients" element={<ClientList />} />
+          <Route path="/clients/create" element={<CreateClient />} />
+          <Route path="/clients/:id" element={<ClientDetail />} />
+          <Route path="/clients/:id/edit" element={<EditClient />} />
+          
           {/* Quotation routes */}
           <Route path="/quotations" element={<QuotationList />} />
           <Route path="/quotations/create" element={<CreateQuotation />} />
           <Route path="/quotations/:id" element={<QuotationDetail />} />
           <Route path="/quotations/:id/edit" element={<EditQuotation />} />
           
+          {/* Invoice routes */}
+          <Route path="/invoices" element={<InvoiceList />} />
+          <Route path="/invoices/create" element={<CreateInvoice />} />
+          <Route path="/invoices/:id" element={<InvoiceDetail />} />
+          
+          {/* LPO routes */}
+          <Route path="/lpos" element={<LPOList />} />
+          <Route path="/lpos/:id" element={<LPODetail />} />
+          
           {/* Admin routes */}
           <Route path="/items" element={<ItemManagement />} />
-          
-          {/* Other routes would be added here as they're developed */}
-          {/* <Route path="/clients" element={<ClientList />} /> */}
-          {/* <Route path="/invoices" element={<InvoiceList />} /> */}
-          {/* <Route path="/lpos" element={<LPOList />} /> */}
-          {/* <Route path="/payments" element={<PaymentList />} /> */}
-          {/* <Route path="/delivery-notes" element={<DeliveryList />} /> */}
           
           {/* Add a catch-all route that redirects to Dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
