@@ -32,7 +32,7 @@ const Sidebar = ({
     {
       title: "Dashboard",
       items: [
-        { title: "Overview", path: "/", icon: Home },
+        { title: "Overview", path: "/dashboard", icon: Home },
         { title: "Analytics", path: "/analytics", icon: BarChart4 },
       ],
     },

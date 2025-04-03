@@ -1,39 +1,58 @@
 // frontend/src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import Navbar from './components/layout/Navbar';
-import Sidebar from './components/layout/Sidebar';
-import Home from './pages/Home';
+
+// Layout
+import MainLayout from './components/layout/MainLayout';
+
+// Pages
 import Dashboard from './pages/admin/Dashboard';
 import ItemManagement from './pages/admin/ItemManagement';
-import CreateQuotation from './pages/quotation/CreateQuotation';
+
+// Quotation pages
 import QuotationList from './pages/quotation/QuotationList';
+import CreateQuotation from './pages/quotation/CreateQuotation';
 import QuotationDetail from './pages/quotation/QuotationDetail';
 import EditQuotation from './pages/quotation/EditQuotation';
 
+// Other pages would be imported here as they're developed
+// import ClientList from './pages/client/ClientList';
+// import InvoiceList from './pages/invoice/InvoiceList';
+// import LPOList from './pages/lpo/LPOList';
+// import PaymentList from './pages/payment/PaymentList';
+// import DeliveryList from './pages/delivery/DeliveryList';
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-dark">
-        <Navbar />
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 p-4">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/admin/items" element={<ItemManagement />} />
-              <Route path="/quotation/create" element={<CreateQuotation />} />
-              <Route path="/quotations" element={<QuotationList />} />
-              <Route path="/quotations/:id" element={<QuotationDetail />} />
-              <Route path="/quotations/:id/edit" element={<EditQuotation />} />
-
-              
-            </Routes>
-          </main>
-        </div>
-      </div>
+      <Routes>
+        {/* Main application with layout */}
+        <Route element={<MainLayout />}>
+          {/* Dashboard as default route */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Quotation routes */}
+          <Route path="/quotations" element={<QuotationList />} />
+          <Route path="/quotations/create" element={<CreateQuotation />} />
+          <Route path="/quotations/:id" element={<QuotationDetail />} />
+          <Route path="/quotations/:id/edit" element={<EditQuotation />} />
+          
+          {/* Admin routes */}
+          <Route path="/items" element={<ItemManagement />} />
+          
+          {/* Other routes would be added here as they're developed */}
+          {/* <Route path="/clients" element={<ClientList />} /> */}
+          {/* <Route path="/invoices" element={<InvoiceList />} /> */}
+          {/* <Route path="/lpos" element={<LPOList />} /> */}
+          {/* <Route path="/payments" element={<PaymentList />} /> */}
+          {/* <Route path="/delivery-notes" element={<DeliveryList />} /> */}
+          
+          {/* Add a catch-all route that redirects to Dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+      </Routes>
+      
       <Toaster
         position="top-right"
         toastOptions={{
